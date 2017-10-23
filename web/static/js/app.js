@@ -31,7 +31,7 @@ let listBy = (user, {metas: metas}) => {
 }
 
 let userList = document.getElementById("UserList")
-let render = (presence) => {
+let render = (presences) => {
   userList.innerHTML = Presence.list(presences, listBy)
     .map(presence => `
       <li>
@@ -42,8 +42,8 @@ let render = (presence) => {
       `)
       .join("")
 }
-
-let room = socket.channel("room:lobby")
+//Channels
+let room = socket.channel("room:lobby", {})
 room.on("presence_state", state => {
   presences = Presence.syncState(presences, state)
   render(presences)
@@ -55,3 +55,25 @@ room.on("presence_diff", diff => {
 })
 
 room.join()
+
+let messageInput = document.getElementById("NewMessage")
+messageInput.addEventListener("keypress", (e) => {
+  if(e.keyCode == 13 && messageInput.value != "") {
+    room.push("message:new", messageInput.value)
+    messageInput.value = ""
+  }
+})
+
+let messageList = document.getElementById("MessageList")
+let renderMessage = (message) => {
+  let messageElement = document.createElement("li")
+  messageElement.innerHTML = `
+  <b>${message.user}</b>
+  <i>${formatTimestamp(message.timestamp)}</i>
+  <p>${message.body}</p>
+  `
+  messageList.appendChild(messageElement)
+  messageList.scrollTop = messageList.scrollHeight;
+}
+
+room.on("message:new", message => renderMessage(message))
